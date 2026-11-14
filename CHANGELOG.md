@@ -18,5 +18,9 @@ versions follow [SemVer](https://semver.org/).
 - `patch_idle.py`: idle shard CPU from ~1.9 cores to ~0.5.
 - Memory: 4x6 console font (conhost ~560 MB to ~100 MB each), MSSQL capped
   at `MSSQL_MEMORY_LIMIT_MB`. Idle total ~13 GB to ~3.6 GB.
+- `panel/`: admin panel (create accounts, set passwords, ban, character access
+  levels, shard status). Python stdlib + pymssql, Basic auth, localhost only.
+- `docs/addons.md`: CityVault (runs on Linux once its Windows-only LocalDB
+  driver is dropped), CoHDBTools, data mods and binning, source builds.
 - Experimental Linux client container (`--profile client`, noVNC); renders
   black under llvmpipe so far.

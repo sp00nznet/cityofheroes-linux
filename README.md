@@ -21,7 +21,9 @@ any Windows machine.
 3. `docker compose up -d`. The first run loads the database schemas, then
    starts the shard. Wait for `DbServer Ready` in `docker compose logs -f coh`.
    The first MapServer (Atlas Park) takes a few more minutes to load.
-4. Make an account:
+4. Make an account in the admin panel at http://localhost:8080 (user `admin`,
+   `PANEL_PASSWORD` from `.env`), which also sets passwords, bans accounts and
+   sets GM access levels. Or from the command line:
 
        python3 addaccount.py NAME PASSWORD | docker compose exec -T db \
          /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$SA_PASSWORD" -d cohauth
@@ -56,7 +58,16 @@ needed; Apple Silicon runs the images through Rosetta (untested).
 | `COH_IP` | `127.0.0.1` | Address advertised to clients |
 | `MSSQL_MEMORY_LIMIT_MB` | `2048` | MSSQL memory cap |
 | `SERVERMONITOR` | `0` | `1` runs the GUI ServerMonitor (costs CPU) |
+| `PANEL_PASSWORD` | | Admin panel login (user `admin`); panel won't start without it |
+| `PANEL_PORT` | `8080` | Admin panel port (localhost only) |
 | `PIN_HOSTNAME` | `1` | Map the container's hostname to `COH_IP` (see below) |
+
+## Add-ons
+
+[docs/addons.md](docs/addons.md) covers the built-in admin panel, the
+community CityVault player site (running it next to the shard), CoHDBTools,
+how to install data mods such as Sophie's Freeform Character Creation, and
+running your own build of the Ouroboros source.
 
 ## How it works
 

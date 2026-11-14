@@ -22,6 +22,12 @@ services:
     environment: { SA_PASSWORD: "${SA_PASSWORD}", COH_IP: "${COH_IP:-127.0.0.1}", SERVERMONITOR: "${SERVERMONITOR:-0}" }
     volumes: [ "${COH_DIR}/Server:/coh/Server", "${COH_DIR}/Setup:/coh/Setup:ro", "./winodbc:/winodbc:ro" ]
     ports: [ "2104-2108:2104-2108", "6950-7100:6950-7100", "6950-7100:6950-7100/udp", "127.0.0.1:6080:6080" ]
+  panel:
+    # Admin panel: http://localhost:8080 (user admin, PANEL_PASSWORD). Localhost only; put a TLS proxy in front to expose it.
+    build: { context: ., dockerfile: panel/Dockerfile }
+    depends_on: [ db ]
+    environment: { SA_PASSWORD: "${SA_PASSWORD}", PANEL_PASSWORD: "${PANEL_PASSWORD}" }
+    ports: [ "127.0.0.1:${PANEL_PORT:-8080}:8080" ]
   client:
     # Linux test client: browse http://localhost:6080/vnc.html . Shares coh's network so it talks over localhost.
     build: ./client
