@@ -1,0 +1,5 @@
+# Windows' own odbc32.dll/odbcint.dll: Microsoft's, not redistributable. Copy your own (README).
+winodbc/
+# Your settings and SA password.
+.env
+__pycache__/

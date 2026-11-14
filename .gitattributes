@@ -1,0 +1,4 @@
+# Shell scripts, Python and the Dockerfile keep LF, also in a Windows checkout used from WSL or Docker.
+*.sh text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf

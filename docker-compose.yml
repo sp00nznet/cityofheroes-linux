@@ -1,0 +1,33 @@
+# Usage: cp .env.example .env (edit it), then docker compose up -d
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment: { ACCEPT_EULA: "Y", MSSQL_SA_PASSWORD: "${SA_PASSWORD}", MSSQL_MEMORY_LIMIT_MB: "${MSSQL_MEMORY_LIMIT_MB:-2048}" }
+    volumes: [ "mssql:/var/opt/mssql" ]
+  initdb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    depends_on: [ db ]
+    environment: { SA_PASSWORD: "${SA_PASSWORD}" }
+    volumes: [ "./initdb.sh:/initdb.sh:ro", "${COH_DIR}/Setup/SQLInstall/DBSchemas:/schemas:ro" ]
+    entrypoint: [ "bash", "/initdb.sh" ]
+  coh:
+    build: .
+    image: coh-server
+    # Launcher passes -db <hostname> to MapServers; names starting with a digit get parsed as an IP (-> 255.255.255.255).
+    hostname: cohshard
+    platform: linux/amd64
+    depends_on: { initdb: { condition: service_completed_successfully } }
+    environment: { SA_PASSWORD: "${SA_PASSWORD}", COH_IP: "${COH_IP:-127.0.0.1}", SERVERMONITOR: "${SERVERMONITOR:-0}" }
+    volumes: [ "${COH_DIR}/Server:/coh/Server", "${COH_DIR}/Setup:/coh/Setup:ro", "./winodbc:/winodbc:ro" ]
+    ports: [ "2104-2108:2104-2108", "6950-7100:6950-7100", "6950-7100:6950-7100/udp", "127.0.0.1:6080:6080" ]
+  client:
+    # Linux test client: browse http://localhost:6080/vnc.html . Shares coh's network so it talks over localhost.
+    build: ./client
+    platform: linux/amd64
+    profiles: [ client ]
+    depends_on: [ coh ]
+    network_mode: "service:coh"
+    volumes: [ "${COH_DIR}/Client:/client" ]
+volumes: { mssql: {} }
