@@ -28,6 +28,16 @@ services:
     depends_on: [ db ]
     environment: { SA_PASSWORD: "${SA_PASSWORD}", PANEL_PASSWORD: "${PANEL_PASSWORD}" }
     ports: [ "127.0.0.1:${PANEL_PORT:-8080}:8080" ]
+  bots:
+    # Bot players (TestClient.exe), `docker compose --profile bots up -d`. Shares coh's network so they log in over localhost.
+    build: { context: ., dockerfile: bots/Dockerfile }
+    platform: linux/amd64
+    profiles: [ bots ]
+    depends_on: [ coh ]
+    network_mode: "service:coh"
+    environment: { SA_PASSWORD: "${SA_PASSWORD}", BOTS: "${BOTS:-5}", BOT_MODES: "${BOT_MODES:-+FIGHT +MOVE +CHAT +AUTOREZ}" }
+    volumes: [ "${COH_DIR}/Server:/coh/Server" ]
+    stop_grace_period: 30s
   client:
     # Linux test client: browse http://localhost:6080/vnc.html . Shares coh's network so it talks over localhost.
     build: ./client

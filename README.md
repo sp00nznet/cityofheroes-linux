@@ -60,6 +60,15 @@ needed; Apple Silicon runs the images through Rosetta (untested).
 | `SERVERMONITOR` | `0` | `1` runs the GUI ServerMonitor (costs CPU) |
 | `PANEL_PASSWORD` | | Admin panel login (user `admin`); panel won't start without it |
 | `PANEL_PORT` | `8080` | Admin panel port (localhost only) |
+| `BOTS` | `5` | Bot players to run with `--profile bots` |
+| `BOT_MODES` | `+FIGHT +MOVE +CHAT +AUTOREZ` | TestClient behaviours for the bots |
+## Bots
+
+`docker compose --profile bots up -d` starts `BOTS` bot players. They use the `TestClient.exe` that ships
+in the Ouroboros install: each one logs in as `botN`, rolls a random archetype the first time, and
+fights in its zone. Measured with 5: ~220 MB RAM and ~7% of a core per bot, plus the MapServer load
+of the fights. A bot whose first zone was still booting is restarted a minute later.
+
 | `PIN_HOSTNAME` | `1` | Map the container's hostname to `COH_IP` (see below) |
 
 ## Add-ons
