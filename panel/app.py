@@ -29,14 +29,14 @@ def create(name, pw):
     if q('SELECT 1 x FROM dbo.user_account WHERE account=%s', name): return f'{name} already exists.'
     q("""DECLARE @id INT = (SELECT ISNULL(MAX(uid),0)+1 FROM dbo.user_account);
 INSERT INTO dbo.user_account (account, uid, forum_id, pay_stat) VALUES (%s, @id, @id, 1014);
-INSERT INTO dbo.user_auth (account, password, salt, hash_type) VALUES (%s, CONVERT(BINARY(128), %s), 0, 1);
+INSERT INTO dbo.user_auth (account, password, salt, hash_type) VALUES (%s, CONVERT(BINARY(128), CONVERT(VARCHAR(128), %s)), 0, 1);
 INSERT INTO dbo.user_data (uid, user_data) VALUES (@id, 0x00000000000000000000000000000000);
 INSERT INTO dbo.user_server_group (uid, server_group_id) VALUES (@id, 1);""", name, name, game_hash(name, pw))
     return f'Created {name}.'
 
 def set_password(name, pw):
     if (e := valid(name, pw)): return e
-    q('UPDATE dbo.user_auth SET password=CONVERT(BINARY(128), %s), salt=0, hash_type=1 WHERE account=%s', game_hash(name, pw), name)
+    q('UPDATE dbo.user_auth SET password=CONVERT(BINARY(128), CONVERT(VARCHAR(128), %s)), salt=0, hash_type=1 WHERE account=%s', game_hash(name, pw), name)
     return f'Password set for {name}.'
 
 def port_open(host, port):
