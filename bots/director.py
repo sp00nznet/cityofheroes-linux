@@ -31,6 +31,25 @@ INSERT INTO dbo.user_server_group (uid, server_group_id) VALUES (@id, 1);""", (n
             cur.execute('UPDATE dbo.user_auth SET password=CONVERT(BINARY(128), CONVERT(VARCHAR(128), %s)), salt=0, hash_type=1 WHERE account=%s',
                         (game_hash(name, PW), name))
 
+VILLAIN_ATS = range(232, 239)   # Attributes ids: Arachnos x2, Corruptor, Dominator, Mastermind, Stalker, Brute
+FIRST = 'Captain Doctor Night Iron Crimson Silver Shadow Atomic Mighty Steel Mister Lady Black Star Frost Storm Ember Rogue Grim Neon'.split()
+LAST = 'Falcon Hammer Bolt Wraith Viper Titan Comet Fang Blaze Sentinel Specter Rook Raven Golem Vortex Hex Jackal Nova Talon Torrent'.split()
+
+def setup(cur, account):
+    """TestClient rolls a random AT and names it TEST#####, always as a hero in Atlas Park.
+    Give it a name, and make villain ATs villains the way the game's alignment switch does."""
+    cur.execute("""SELECT e.ContainerId, e.Class FROM cohdb.dbo.Ents e JOIN dbo.user_account a ON a.uid=e.AuthId
+WHERE a.account=%s AND e.Name LIKE 'TEST%%' AND e.Class IS NOT NULL""", account)
+    for cid, cls in cur.fetchall():
+        rnd = random.Random(f'{account}{cid}')
+        name = rnd.choice(FIRST) + rnd.choice(LAST)   # no spaces: TestClient's -character arg can't carry one
+        cur.execute('SELECT 1 FROM cohdb.dbo.Ents WHERE Name=%s', name)
+        if cur.fetchall(): name += str(cid)
+        vil = cls in VILLAIN_ATS or rnd.random() < 0.3   # any AT can go rogue since i18; keeps both sides populated
+        cur.execute("""UPDATE cohdb.dbo.Ents SET Name=%s, PlayerType=%s, MapId=%s, StaticMapId=%s, SpawnTarget='NewPlayer'
+WHERE ContainerId=%s""", (name, int(vil), 71 if vil else 1, 71 if vil else 1, cid))
+        print(f'{account}: {name}, {"villain" if vil else "hero"} class {cls}', flush=True)
+
 def character(name):
     """A finished character to resume, or a name that doesn't exist (TestClient then creates one).
     A creation cut short by a cold zone leaves a character with no class that can never be resumed."""
@@ -38,6 +57,7 @@ def character(name):
         # It holds the account's only slot, so drop it (it never got further than its Ents row) while offline.
         cur.execute("""DELETE e FROM cohdb.dbo.Ents e JOIN dbo.user_account a ON a.uid=e.AuthId
 WHERE a.account=%s AND e.Class IS NULL AND ISNULL(e.Active,0)=0""", name)
+        if name != 'scout': setup(cur, name)
         cur.execute("""SELECT TOP 1 e.Name FROM cohdb.dbo.Ents e JOIN dbo.user_account a ON a.uid=e.AuthId
 WHERE a.account=%s AND e.Class IS NOT NULL ORDER BY e.ContainerId""", name)
         r = cur.fetchall()
