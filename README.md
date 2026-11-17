@@ -56,7 +56,7 @@ needed; Apple Silicon runs the images through Rosetta (untested).
 | `COH_DIR` | | Ouroboros install folder |
 | `SA_PASSWORD` | | MSSQL sa password |
 | `COH_IP` | `127.0.0.1` | Address advertised to clients |
-| `MSSQL_MEMORY_LIMIT_MB` | `2048` | MSSQL memory cap |
+| `MSSQL_MEMORY_LIMIT_MB` | `8192` | MSSQL memory cap. Under ~4 GB its plan cache thrashes once ~10 players are on (DBServer saves are 30 KB batches) |
 | `SERVERMONITOR` | `0` | `1` runs the GUI ServerMonitor (costs CPU) |
 | `PANEL_PASSWORD` | | Admin panel login (user `admin`); panel won't start without it |
 | `PANEL_PORT` | `8080` | Admin panel port (localhost only) |
@@ -77,6 +77,10 @@ Zones only boot when someone enters them (~1 min each under Wine), so before the
 Steel Canyon, Mercy Island, Port Oakes) to start it. Set `SCOUT_ZONES=` to skip that step.
 Restart just the bots with `docker compose --profile bots up -d --no-deps bots`; without `--no-deps`
 compose may recreate the shard too.
+
+Measured with 20 bots (14 heroes in Atlas Park, 7 villains in Mercy Island): the bots container
+used 4.3 GB and under half a core; the shard 11.5 GB (each running zone is ~1.9 GB) and about a
+core. Each new bot gets its hero name and side on its second login.
 
 
 ## Add-ons
