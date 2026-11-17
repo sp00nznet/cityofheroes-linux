@@ -35,7 +35,7 @@ services:
     profiles: [ bots ]
     depends_on: [ coh ]
     network_mode: "service:coh"
-    environment: { SA_PASSWORD: "${SA_PASSWORD}", BOTS: "${BOTS:-5}", BOT_MODES: "${BOT_MODES:-+FIGHT +MOVE +CHAT +AUTOREZ}" }
+    environment: { SA_PASSWORD: "${SA_PASSWORD}", BOTS: "${BOTS:-5}", SCOUT_ZONES: "${SCOUT_ZONES-1 5 6 71 72}", BOT_MODES: "${BOT_MODES:-+FIGHT +MOVE +CHAT +AUTOREZ}" }
     volumes: [ "${COH_DIR}/Server:/coh/Server" ]
     stop_grace_period: 30s
   client:

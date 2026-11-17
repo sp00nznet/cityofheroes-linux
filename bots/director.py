@@ -10,6 +10,8 @@ from addaccount import game_hash
 N = int(os.environ.get('BOTS', '5'))
 MODES = os.environ.get('BOT_MODES', '+FIGHT +MOVE +CHAT +AUTOREZ').split()
 RETRY = int(os.environ.get('BOT_RETRY', '60'))
+# Zones the scout boots before the bots log in (maps.db ids): Atlas, Kings Row, Steel, Mercy, Port Oakes.
+ZONES = [int(z) for z in os.environ.get('SCOUT_ZONES', '1 5 6 71 72').split()]
 # Bot accounts are real logins: derive their password from SA_PASSWORD rather than ship a known one.
 PW = hashlib.sha256(('bots' + os.environ['SA_PASSWORD']).encode()).hexdigest()[:12]
 DB = dict(server=os.environ.get('DB_HOST', 'db'), user='sa', password=os.environ['SA_PASSWORD'],
@@ -41,13 +43,43 @@ WHERE a.account=%s AND e.Class IS NOT NULL ORDER BY e.ContainerId""", name)
         r = cur.fetchall()
     return r[0][0] if r else '~new'
 
+def tc(name, char, *modes):
+    return subprocess.Popen(['wine', 'TestClient.exe', '-authname', name, '-password', PW, '-auth', '127.0.0.1',
+                             '-character', char, '-dontpause', '-nosharedmemory', *modes],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def sql(q, *a):
+    with pymssql.connect(**DB) as c, c.cursor() as cur:
+        cur.execute(q, a); return cur.fetchall() if cur.description else None
+
+def scout():
+    """Zones boot on first entry (~1 min under Wine) and bots that arrive first time out.
+    The scout's saved map is set to each zone while it's offline, so logging in makes DBServer boot it."""
+    ensure_account('scout')
+    for z in ZONES:
+        for _ in range(8):
+            char = character('scout')
+            if char != '~new':
+                # Wait out the last login, or DBServer's logout save puts the old map back.
+                for _ in range(60):
+                    if not sql('SELECT 1 FROM cohdb.dbo.Ents WHERE Name=%s AND Active>0', char) or stop.wait(5): break
+                sql('UPDATE cohdb.dbo.Ents SET MapId=%s, StaticMapId=%s WHERE Name=%s', z, z, char)
+            p, t = tc('scout', char), time.time()
+            # Still connected after 60 s = past login, DBServer has launched the zone (it keeps booting after we go).
+            # A failed login (S_ALREADY_LOGIN etc.) exits sooner. Active is no use: a killed client leaves it set.
+            while p.poll() is None and time.time() - t < 60 and not stop.wait(1): pass
+            arrived = p.poll() is None
+            p.terminate(); p.wait()
+            if stop.is_set(): return
+            print(f'scout: zone {z} {"booting" if arrived else "not yet"} after {time.time()-t:.0f}s', flush=True)
+            stop.wait(RETRY)   # let the login clear (S_ALREADY_LOGIN otherwise)
+            if arrived and char != '~new': break
+
 def run_bot(n):
     name = f'bot{n}'
     ensure_account(name)
     while not stop.is_set():
-        p = subprocess.Popen(['wine', 'TestClient.exe', '-authname', name, '-password', PW, '-auth', '127.0.0.1',
-                              '-character', character(name), '-dontpause', '-nosharedmemory', *MODES],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p = tc(name, character(name), *MODES)
         t = time.time()
         while p.poll() is None and not stop.is_set(): time.sleep(1)
         if stop.is_set(): p.terminate(); return
@@ -57,6 +89,7 @@ def run_bot(n):
 def main():
     signal.signal(signal.SIGTERM, lambda *a: stop.set())
     print(f'director: {N} bots, modes {" ".join(MODES)}', flush=True)
+    if ZONES: scout()
     threads = []
     for n in range(1, N + 1):
         threads.append(threading.Thread(target=run_bot, args=(n,), daemon=True)); threads[-1].start()

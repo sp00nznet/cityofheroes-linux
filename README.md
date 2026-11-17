@@ -61,6 +61,7 @@ needed; Apple Silicon runs the images through Rosetta (untested).
 | `PANEL_PASSWORD` | | Admin panel login (user `admin`); panel won't start without it |
 | `PANEL_PORT` | `8080` | Admin panel port (localhost only) |
 | `BOTS` | `5` | Bot players to run with `--profile bots` |
+| `SCOUT_ZONES` | `1 5 6 71 72` | Zones booted before the bots log in |
 | `BOT_MODES` | `+FIGHT +MOVE +CHAT +AUTOREZ` | TestClient behaviours for the bots |
 | `PIN_HOSTNAME` | `1` | Map the container's hostname to `COH_IP` (see below) |
 
@@ -70,6 +71,12 @@ needed; Apple Silicon runs the images through Rosetta (untested).
 in the Ouroboros install: each one logs in as `botN`, rolls a random archetype the first time, and
 fights in its zone. Measured with 5: ~220 MB RAM and ~7% of a core per bot, plus the MapServer load
 of the fights. A bot whose first zone was still booting is restarted a minute later.
+
+Zones only boot when someone enters them (~1 min each under Wine), so before the bots log in a
+`scout` account visits each zone in `SCOUT_ZONES` (maps.db ids, default Atlas Park, Kings Row,
+Steel Canyon, Mercy Island, Port Oakes) to start it. Set `SCOUT_ZONES=` to skip that step.
+Restart just the bots with `docker compose --profile bots up -d --no-deps bots`; without `--no-deps`
+compose may recreate the shard too.
 
 
 ## Add-ons
