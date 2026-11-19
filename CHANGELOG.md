@@ -24,3 +24,10 @@ versions follow [SemVer](https://semver.org/).
   driver is dropped), CoHDBTools, data mods and binning, source builds.
 - Experimental Linux client container (`--profile client`, noVNC); renders
   black under llvmpipe so far.
+- `bots/`: bot players (`--profile bots`). A director keeps `BOTS` copies of
+  the shipped `TestClient.exe` logged in, names them, sends villain archetypes
+  to Mercy Island, and has a scout boot zones first. 20 bots measured.
+
+### Fixed
+- Panel-made accounts couldn't log in (password hash stored as UTF-16).
+- MSSQL default cap 2 GB → 8 GB: at 2 GB, saves recompiled constantly.
